@@ -1,4 +1,5 @@
-resource "aws_db_snapshot" "this" {
-  db_instance_identifier = var.db_id
-  db_snapshot_identifier = "${var.db_id}-snapshot"
+module "backup" {
+  source = "../modules/backup"
+
+  db_id = var.db_id
 }
