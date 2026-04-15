@@ -1,0 +1,97 @@
+name: rds-oidc-multitenant
+
+on:
+  push:
+    branches: ["main"]
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-south-1
+  ROLE_ARN: arn:aws:iam::572309372498:role/rds-oidc-multitenant-platform
+
+jobs:
+
+  cluster:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: clusters/aws
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        run: terraform plan -var-file="vars/dev.tfvars"
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve -var-file="vars/dev.tfvars"
+
+
+  database:
+    needs: [cluster]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: databases/aws
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        run: terraform plan -var-file="vars/dev.tfvars"
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve -var-file="vars/dev.tfvars"
+
+
+  backup:
+    needs: [database]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backup/aws
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        run: terraform plan -var-file="vars/dev.tfvars"
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve -var-file="vars/dev.tfvars"
