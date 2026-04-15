@@ -1,1 +1,1 @@
-db_id = "dev-rds-cluster"
+db_id = "dev-free-tier-db"
